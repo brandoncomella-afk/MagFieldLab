@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E&M Unit 4 — Magnetic Field Around a Wire</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #030b18;
+    --panel:    rgba(8,16,38,0.75);
+    --border:   rgba(40,80,160,0.35);
+    --text:     #88aadd;
+    --accent:   #6aaeff;
+    --mono:     'Share Tech Mono', 'Courier New', monospace;
+    --display:  'Orbitron', 'Share Tech Mono', monospace;
+    --gold:     #ffc832;
+    --blue:     #6496ff;
+    --green:    #50c878;
+    --red:      #ff3333;
+  }
+
+  body {
+    background: linear-gradient(160deg, var(--bg) 0%, #060e1c 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 12px 40px;
+    font-family: var(--mono);
+    color: var(--text);
+  }
+
+  /* ── Header ── */
+  .lab-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    color: #3a6ab8;
+    margin-bottom: 4px;
+  }
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  /* ── Controls ── */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 16px;
+    margin-bottom: 10px;
+    max-width: 560px;
+    width: 100%;
+  }
+
+  button {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    padding: 5px 13px;
+    border-radius: 4px;
+    cursor: pointer;
+    background: transparent;
+    transition: all 0.15s;
+  }
+
+  .btn-current {
+    border: 1.5px solid rgba(60,90,160,0.35);
+    color: #445577;
+  }
+  .btn-current.active-up   { border-color: var(--gold); color: var(--gold); background: rgba(255,200,50,0.1); }
+  .btn-current.active-down { border-color: var(--blue); color: var(--blue); background: rgba(100,150,255,0.1); }
+
+  .btn-earth {
+    border: 1.5px solid rgba(60,90,160,0.35);
+    color: #445577;
+  }
+  .btn-earth.active { border-color: var(--green); color: var(--green); background: rgba(80,200,120,0.12); }
+
+  .btn-angle {
+    border: 1.5px solid rgba(60,90,160,0.35);
+    color: #445577;
+  }
+  .btn-angle.active { border-color: #c084fc; color: #c084fc; background: rgba(192,132,252,0.12); }
+
+  .btn-undo  { border: 1.5px solid rgba(200,160,50,0.4);  color: rgba(220,180,60,0.7); }
+  .btn-clear { border: 1.5px solid rgba(255,70,70,0.4);   color: rgba(255,100,100,0.75); }
+  .btn-undo:hover  { background: rgba(200,160,50,0.08); }
+  .btn-clear:hover { background: rgba(255,70,70,0.08); }
+
+  .amp-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.7rem;
+  }
+  .amp-row span.label { opacity: 0.6; }
+  .amp-row span.val   { color: var(--accent); min-width: 32px; }
+  input[type=range] {
+    width: 72px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  /* ── Instruction strip ── */
+  .hint {
+    font-size: 0.65rem;
+    opacity: 0.5;
+    letter-spacing: 0.07em;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+
+  /* ── SVG canvas wrapper ── */
+  .canvas-wrap {
+    width: 100%;
+    max-width: 500px;
+    border: 1px solid rgba(40,80,170,0.35);
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: crosshair;
+    display: block;
+  }
+  svg { display: block; width: 100%; }
+
+  /* ── Status note ── */
+  .status-note {
+    margin-top: 8px;
+    font-size: 0.65rem;
+    max-width: 480px;
+    text-align: center;
+    padding: 5px 12px;
+    border-radius: 4px;
+    line-height: 1.5;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .status-note.earth-off {
+    color: rgba(100,140,200,0.5);
+    border: 1px solid rgba(40,70,140,0.25);
+  }
+  .status-note.earth-on {
+    color: rgba(80,210,130,0.65);
+    border: 1px solid rgba(80,200,120,0.25);
+  }
+
+  /* ── Analysis questions ── */
+  .btn-questions {
+    margin-top: 14px;
+    border: 1px solid rgba(40,75,160,0.45);
+    color: rgba(90,140,220,0.7);
+    padding: 6px 18px;
+    border-radius: 4px;
+  }
+  .btn-questions:hover { background: rgba(40,75,160,0.1); }
+
+  .questions-panel {
+    display: none;
+    margin-top: 10px;
+    max-width: 500px;
+    width: 100%;
+    background: rgba(6,14,34,0.85);
+    border: 1px solid rgba(35,70,150,0.4);
+    border-radius: 6px;
+    padding: 16px;
+    font-size: 0.7rem;
+    line-height: 1.75;
+    color: #7a9fc0;
+  }
+  .questions-panel.open { display: block; }
+  .q-title {
+    color: #4a80ee;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+    font-size: 0.72rem;
+  }
+  .q-item {
+    margin-bottom: 9px;
+    padding-left: 10px;
+    border-left: 2px solid rgba(40,80,160,0.4);
+  }
+</style>
+</head>
+<body>
+
+<div class="lab-label">E&M UNIT 4 — VIRTUAL LAB 1</div>
+<h1>MAGNETIC FIELD AROUND A WIRE</h1>
+
+<div class="controls">
+  <button class="btn-current active-up"  id="btnUp"   onclick="setCurrentDir(true)">⊙&nbsp;&nbsp;OUT OF PAGE</button>
+  <button class="btn-current"            id="btnDown" onclick="setCurrentDir(false)">⊗&nbsp;&nbsp;INTO PAGE</button>
+  <button class="btn-earth active" id="btnEarth" onclick="toggleEarth()">🧭 EARTH FIELD: ON</button>
+  <div class="amp-row">
+    <span class="label">I =</span>
+    <input type="range" id="ampSlider" min="1" max="10" value="5" oninput="setAmps(this.value)">
+    <span class="val" id="ampVal">5 A</span>
+  </div>
+  <button class="btn-angle" id="btnAngle" onclick="toggleAngle()">∠ SHOW ANGLE: OFF</button>
+  <button class="btn-undo"  onclick="undo()">UNDO</button>
+  <button class="btn-clear" onclick="clearAll()">CLEAR ALL</button>
+</div>
+
+<div class="hint">HOVER to preview · CLICK to stamp a compass · map the full field pattern</div>
+
+<div class="canvas-wrap">
+  <svg id="lab" viewBox="0 0 500 500"
+       onmousemove="onMove(event)"
+       onmouseleave="onLeave()"
+       onclick="onStamp(event)">
+
+    <!-- Background -->
+    <rect width="500" height="500" fill="#040c1b"/>
+
+    <!-- Grid -->
+    <g id="grid" stroke="rgba(28,52,110,0.4)" stroke-width="0.6"></g>
+
+    <!-- Reference circles -->
+    <g id="rings" fill="none" stroke="rgba(35,75,165,0.45)" stroke-width="1" stroke-dasharray="5,4"></g>
+
+    <!-- Earth field indicator (hidden by default) -->
+    <g id="earthIndicator">
+      <defs>
+        <marker id="arrowGreen" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="rgba(80,200,120,0.75)"/>
+        </marker>
+      </defs>
+      <line x1="30" y1="58" x2="30" y2="20"
+            stroke="rgba(80,200,120,0.7)" stroke-width="2"
+            marker-end="url(#arrowGreen)"/>
+      <text x="30" y="72" text-anchor="middle"
+            fill="rgba(80,200,120,0.6)" font-size="8" font-family="'Share Tech Mono',monospace">B_earth</text>
+      <text x="250" y="14" text-anchor="middle"
+            fill="rgba(80,200,120,0.55)" font-size="11" font-family="'Share Tech Mono',monospace">N</text>
+    </g>
+
+    <!-- Stamped compasses layer -->
+    <g id="stampLayer"></g>
+
+    <!-- Wire symbol -->
+    <g id="wireUp">
+      <circle cx="250" cy="250" r="32" fill="none" stroke="rgba(255,190,30,0.07)" stroke-width="12"/>
+      <circle cx="250" cy="250" r="13" fill="rgba(255,185,28,0.12)" stroke="rgba(255,185,28,0.9)" stroke-width="2"/>
+      <circle cx="250" cy="250" r="4.5" fill="rgba(255,210,60,0.95)"/>
+      <text x="270" y="234" fill="rgba(255,185,30,0.6)" font-size="10" font-family="'Share Tech Mono',monospace">I ↑</text>
+    </g>
+    <g id="wireDown" display="none">
+      <circle cx="250" cy="250" r="32" fill="none" stroke="rgba(100,148,255,0.07)" stroke-width="12"/>
+      <circle cx="250" cy="250" r="13" fill="rgba(100,148,255,0.12)" stroke="rgba(100,148,255,0.9)" stroke-width="2"/>
+      <line x1="242" y1="242" x2="258" y2="258" stroke="rgba(100,148,255,0.9)" stroke-width="2.5"/>
+      <line x1="258" y1="242" x2="242" y2="258" stroke="rgba(100,148,255,0.9)" stroke-width="2.5"/>
+      <text x="270" y="234" fill="rgba(100,148,255,0.6)" font-size="10" font-family="'Share Tech Mono',monospace">I ↓</text>
+    </g>
+
+    <!-- Live compass layer (always on top) -->
+    <g id="liveLayer"></g>
+
+    <!-- Too-close warning -->
+    <text id="tooClose" display="none" text-anchor="middle"
+          fill="rgba(255,180,50,0.55)" font-size="10" font-family="'Share Tech Mono',monospace">too close</text>
+
+    <!-- Stamp counter -->
+    <text id="stampCount" x="492" y="492" text-anchor="end"
+          fill="rgba(60,100,190,0.5)" font-size="10" font-family="'Share Tech Mono',monospace"></text>
+  </svg>
+</div>
+
+<div class="status-note earth-on" id="statusNote">
+  Earth field ON — compass shows resultant of Earth's B (north) + wire's B. Matches what a real compass would show in lab.
+</div>
+
+<button class="btn-questions" onclick="toggleQuestions()">▼ SHOW ANALYSIS QUESTIONS</button>
+
+<div class="questions-panel" id="qPanel">
+  <div class="q-title">ANALYSIS QUESTIONS</div>
+  <div class="q-item">1. What shape do the field lines make around the wire? Describe the pattern.</div>
+  <div class="q-item">2. When you reversed the current direction, what happened to the field directions?</div>
+  <div class="q-item">3. What happened to compass deflection as you moved farther from the wire? What does this tell you about field strength vs. distance?</div>
+  <div class="q-item">4. Before current flowed, the compass pointed north. What does this suggest about the wire with no current?</div>
+  <div class="q-item">5. When current flows, is the wire electrically charged overall? What is causing this new field?</div>
+  <div class="q-item">6. Write a statement: what is necessary for this new kind of field to exist?</div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const CX = 250, CY = 250;
+const DATA_RADII = [55, 95, 135, 175, 215];
+const EARTH_FIELD = 1.2;
+const WIRE_K = 60;
+
+let currentUp = true;
+let amps = 5;
+let earthOn = true;
+let stamps = [];   // [{x,y,angle}]
+let qOpen = false;
+let showAngle = false;
+
+// ── Physics ────────────────────────────────────────────────────────────────
+function fieldAngle(x, y) {
+  const dx = x - CX, dy = y - CY;
+  const r = Math.sqrt(dx*dx + dy*dy);
+  if (r < 20) return null;
+
+  // Tangential B field in canvas coords (y-down).
+  // Current UP (out of page) → CCW loops:
+  //   3-o'clock (dx>0, dy=0): bwx=0, bwy=-1 → points UP   ✓
+  //   12-o'clock (dx=0,dy<0): bwx=-1,bwy=0  → points LEFT ✓
+  const s = currentUp ? 1 : -1;
+  const bwx = s * (dy / r);
+  const bwy = s * (-dx / r);
+
+  const ws = (WIRE_K * amps) / r;
+  const tx = ws * bwx;
+  const ty = ws * bwy + (earthOn ? -EARTH_FIELD : 0);
+
+  const mag = Math.sqrt(tx*tx + ty*ty);
+  if (mag < 0.0001) return 0;
+  // Angle clockwise from north: atan2(east, north)
+  return Math.atan2(tx/mag, -ty/mag);
+}
+
+// ── SVG helpers ────────────────────────────────────────────────────────────
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs) {
+  const e = document.createElementNS(SVG_NS, tag);
+  for (const [k,v] of Object.entries(attrs)) e.setAttribute(k, v);
+  return e;
+}
+
+function makeCompass(x, y, angle, size, opacity) {
+  const r = size / 2, nl = r * 0.70;
+  const sa = Math.sin(angle), ca = Math.cos(angle);
+  const fs = Math.max(7, size * 0.18);
+  const g = el('g', { transform: `translate(${x},${y})`, opacity });
+
+  // Glow ring
+  g.appendChild(el('circle', { r: r+4, fill:'none',
+    stroke:'rgba(74,158,255,0.13)', 'stroke-width':6 }));
+  // Body
+  g.appendChild(el('circle', { r, fill:'rgba(4,10,24,0.96)',
+    stroke:'rgba(74,158,255,0.75)', 'stroke-width':1.5 }));
+  // Tick marks
+  [0,90,180,270].forEach(deg => {
+    const rad = deg*Math.PI/180;
+    const l = el('line',{
+      x1: Math.sin(rad)*(r-6), y1: -Math.cos(rad)*(r-6),
+      x2: Math.sin(rad)*(r-1), y2: -Math.cos(rad)*(r-1),
+      stroke:'rgba(74,158,255,0.45)', 'stroke-width':1.2 });
+    g.appendChild(l);
+  });
+  // N label
+  const nt = el('text',{ x:0, y:-r+fs+1, 'text-anchor':'middle',
+    fill:'rgba(100,172,255,0.9)', 'font-size':fs,
+    'font-family':"'Share Tech Mono',monospace", 'font-weight':'bold'});
+  nt.textContent = 'N';
+  g.appendChild(nt);
+  // S label
+  const st = el('text',{ x:0, y:r-3, 'text-anchor':'middle',
+    fill:'rgba(150,150,200,0.4)', 'font-size':fs*0.85,
+    'font-family':"'Share Tech Mono',monospace"});
+  st.textContent = 'S';
+  g.appendChild(st);
+  // South half (gray)
+  g.appendChild(el('line',{
+    x1:0, y1:0, x2: -sa*nl*0.44, y2: ca*nl*0.44,
+    stroke:'#9090aa', 'stroke-width':size*0.065, 'stroke-linecap':'round'}));
+  // North half (red)
+  g.appendChild(el('line',{
+    x1:0, y1:0, x2: sa*nl, y2: -ca*nl,
+    stroke:'#ff3333', 'stroke-width':size*0.065, 'stroke-linecap':'round'}));
+  // Pivot
+  g.appendChild(el('circle',{ r:size*0.055,
+    fill:'#ddd', stroke:'#444', 'stroke-width':0.5 }));
+  return g;
+}
+
+// Convert radians (CW from north) to a tidy 0–360° string
+function toDeg(rad) {
+  const d = Math.round(rad * 180 / Math.PI);
+  return ((d % 360) + 360) % 360;
+}
+
+// Small angle badge rendered top-right of the live compass
+function makeAngleBadge(cx, cy, compassSize, deg) {
+  const r = compassSize / 2;
+  const bx = cx + r + 6;   // just right of the compass edge
+  const by = cy - r + 4;   // top of the compass
+  const g = el('g', {});
+
+  // Pill background
+  g.appendChild(el('rect', {
+    x: bx, y: by - 11, width: 46, height: 15,
+    rx: 4, ry: 4,
+    fill: 'rgba(4,8,22,0.88)',
+    stroke: 'rgba(192,132,252,0.6)',
+    'stroke-width': 1,
+  }));
+
+  // Degree value
+  const vt = el('text', {
+    x: bx + 24, y: by,
+    'text-anchor': 'middle',
+    fill: '#c084fc',
+    'font-size': 10,
+    'font-family': "'Share Tech Mono',monospace",
+    'font-weight': 'bold',
+  });
+  vt.textContent = deg + '°';
+  g.appendChild(vt);
+
+  // Tiny "from N" label below
+  const lt = el('text', {
+    x: bx + 24, y: by + 13,
+    'text-anchor': 'middle',
+    fill: 'rgba(192,132,252,0.45)',
+    'font-size': 7,
+    'font-family': "'Share Tech Mono',monospace",
+  });
+  lt.textContent = 'from N';
+  g.appendChild(lt);
+
+  return g;
+}
+
+
+function buildGrid() {
+  const g = document.getElementById('grid');
+  for (let i = 0; i <= 500; i += 50) {
+    g.appendChild(el('line',{x1:i,y1:0,x2:i,y2:500}));
+    g.appendChild(el('line',{x1:0,y1:i,x2:500,y2:i}));
+  }
+}
+
+function buildRings() {
+  const g = document.getElementById('rings');
+  DATA_RADII.forEach(r => {
+    g.appendChild(el('circle',{cx:CX, cy:CY, r}));
+  });
+}
+
+// ── Event handlers ────────────────────────────────────────────────────────
+function getSVGPos(e) {
+  const svg = document.getElementById('lab');
+  const rect = svg.getBoundingClientRect();
+  return {
+    x: ((e.clientX - rect.left) / rect.width)  * 500,
+    y: ((e.clientY - rect.top)  / rect.height) * 500,
+  };
+}
+
+function onMove(e) {
+  const {x,y} = getSVGPos(e);
+  const angle = fieldAngle(x, y);
+  const live = document.getElementById('liveLayer');
+  const warn = document.getElementById('tooClose');
+  live.innerHTML = '';
+
+  if (angle === null) {
+    warn.setAttribute('x', x);
+    warn.setAttribute('y', y - 26);
+    warn.setAttribute('display', '');
+  } else {
+    warn.setAttribute('display', 'none');
+    live.appendChild(makeCompass(x, y, angle, 44, 1));
+    if (showAngle) {
+      live.appendChild(makeAngleBadge(x, y, 44, toDeg(angle)));
+    }
+  }
+}
+
+function onLeave() {
+  document.getElementById('liveLayer').innerHTML = '';
+  document.getElementById('tooClose').setAttribute('display','none');
+}
+
+function onStamp(e) {
+  const {x,y} = getSVGPos(e);
+  const angle = fieldAngle(x, y);
+  if (angle === null) return;
+  stamps.push({x, y, angle});
+  const layer = document.getElementById('stampLayer');
+  layer.appendChild(makeCompass(x, y, angle, 32, 0.82));
+  updateCount();
+}
+
+// ── Controls ───────────────────────────────────────────────────────────────
+function setCurrentDir(up) {
+  currentUp = up;
+  document.getElementById('btnUp').className   = 'btn-current' + (up  ? ' active-up'   : '');
+  document.getElementById('btnDown').className = 'btn-current' + (!up ? ' active-down' : '');
+  document.getElementById('wireUp').setAttribute('display',   up ? '' : 'none');
+  document.getElementById('wireDown').setAttribute('display', up ? 'none' : '');
+}
+
+function toggleEarth() {
+  earthOn = !earthOn;
+  const btn  = document.getElementById('btnEarth');
+  const note = document.getElementById('statusNote');
+  const ind  = document.getElementById('earthIndicator');
+  btn.textContent = '🧭 EARTH FIELD: ' + (earthOn ? 'ON' : 'OFF');
+  btn.className   = 'btn-earth' + (earthOn ? ' active' : '');
+  ind.setAttribute('display', earthOn ? '' : 'none');
+  note.className  = 'status-note ' + (earthOn ? 'earth-on' : 'earth-off');
+  note.textContent = earthOn
+    ? "Earth field ON — compass shows resultant of Earth's B (north) + wire's B. Matches what a real compass would show in lab."
+    : "Earth field OFF — compass shows pure wire field. Arrows are tangent to the rings (perpendicular to radial lines).";
+}
+
+function setAmps(v) {
+  amps = Number(v);
+  document.getElementById('ampVal').textContent = v + ' A';
+}
+
+function undo() {
+  if (!stamps.length) return;
+  stamps.pop();
+  const layer = document.getElementById('stampLayer');
+  if (layer.lastChild) layer.removeChild(layer.lastChild);
+  updateCount();
+}
+
+function clearAll() {
+  stamps = [];
+  document.getElementById('stampLayer').innerHTML = '';
+  updateCount();
+}
+
+function updateCount() {
+  const n = stamps.length;
+  document.getElementById('stampCount').textContent =
+    n ? n + ' stamp' + (n !== 1 ? 's' : '') : '';
+}
+
+function toggleAngle() {
+  showAngle = !showAngle;
+  const btn = document.getElementById('btnAngle');
+  btn.textContent = '∠ SHOW ANGLE: ' + (showAngle ? 'ON' : 'OFF');
+  btn.className = 'btn-angle' + (showAngle ? ' active' : '');
+}
+
+function toggleQuestions() {
+  qOpen = !qOpen;
+  document.getElementById('qPanel').className = 'questions-panel' + (qOpen ? ' open' : '');
+  document.querySelector('.btn-questions').textContent =
+    (qOpen ? '▲ HIDE' : '▼ SHOW') + ' ANALYSIS QUESTIONS';
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+buildGrid();
+buildRings();
+</script>
+</body>
+</html>
